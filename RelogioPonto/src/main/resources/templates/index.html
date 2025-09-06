@@ -10,10 +10,7 @@
 <!-- Seleção do valor da hora -->
 <h2>Valor da Hora</h2>
 <form method="get" action="/">
-    <select name="valorHora">
-        <option th:value="9" th:selected="${valorHora == 9}">R$ 9</option>
-        <option th:value="12" th:selected="${valorHora == 12}">R$ 12</option>
-    </select>
+    <input type="number" name="valorHora" step="0.01" min="0" th:value="${valorHora}" required>
     <button type="submit">Aplicar</button>
 </form>
 
@@ -22,6 +19,7 @@
 <!-- Formulários de entrada/saída/almoco -->
 <h2>Registrar Ponto</h2>
 <form action="/entrada" method="post">
+    <input type="date" name="dataEntrada" required >
     <input type="time" name="horaEntrada" required>
     <input type="hidden" name="valorHora" th:value="${valorHora}"/>
     <button type="submit">Registrar Entrada</button>
@@ -29,18 +27,18 @@
 
 <!-- Formulário de saída -->
 <form action="/saida" method="post">
+    <input type="date" name="dataSaida" required>
     <input type="time" name="horaSaida" required>
-    <input type="hidden" name="valorHora" th:value="${valorHora}"/>
+    <input type="hidden" name="valorHora" th:value="${valorHora != null ? valorHora : 9}"/>
     <button type="submit">Registrar Saída</button>
 </form>
 
 <!-- Formulário de almoço -->
 <form action="/almoco" method="post">
-    <input type="checkbox" name="almoco">
-    <input type="hidden" name="valorHora" th:value="${valorHora}"/>
-    <button type="submit">Salvar</button>
+    <input type="checkbox" name="almoco" value="true"/>
+    <input type="hidden" name="valorHora" th:value="${valorHora != null ? valorHora : 9}"/>
+    <button type="submit">Marcar Almoço</button>
 </form>
-
 
 <hr/>
 
@@ -59,8 +57,8 @@
         <th>Ações</th>
     </tr>
     <tr th:each="p : ${registros}">
-        <td th:text="${p.entrada != null ? #temporals.format(p.entrada,'HH:mm') : '-'}"></td>
-        <td th:text="${p.saida != null ? #temporals.format(p.saida,'HH:mm') : '-'}"></td>
+        <td th:text="${p.entrada != null ? #temporals.format(p.entrada,'dd-MM-yyyy - HH:mm') : '-'}"></td>
+        <td th:text="${p.saida != null ? #temporals.format(p.saida,'dd-MM-yyyy - HH:mm') : '-'}"></td>
         <td th:text="${p.almoco ? 'Sim' : 'Não'}"></td>
         <td th:text="${svc.calcularHoras(p)} + ' h'"></td>
         <td th:text="${svc.calcularHoras(p) * valorHora}"></td>

@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Comparator;
 import java.util.List;
 
 @Controller
@@ -25,11 +26,16 @@ public class HomeController {
 
     @GetMapping("/")
     public String index(Model model,
-                        @RequestParam(name = "valorHora", required = false, defaultValue = "9") Integer valorHora) {
+                        @RequestParam(name = "valorHora", required = false, defaultValue = "9") Double valorHora) {
 
-        List<RegistroPonto> registros = repository.findAll();
+        List<RegistroPonto> registros = repository.findAll()
+                .stream()
+                .sorted(Comparator.comparing(RegistroPonto::getSaida,
+                        Comparator.nullsLast(Comparator.naturalOrder()))) // ordena pela saída, null por último
+                .toList();
+
         long totalHoras = registros.stream().mapToLong(service::calcularHoras).sum();
-        long totalReceber = totalHoras * valorHora;
+        double totalReceber = totalHoras * valorHora;
 
         model.addAttribute("registros", registros);
         model.addAttribute("svc", service);
@@ -39,12 +45,14 @@ public class HomeController {
 
         return "index";
     }
-
     @PostMapping("/entrada")
-    public String entrada(@RequestParam String horaEntrada,
-                          @RequestParam(name="valorHora", required=false, defaultValue="9") Integer valorHora) {
+    public String entrada(@RequestParam String dataEntrada,
+                          @RequestParam String horaEntrada,
+                          @RequestParam(name="valorHora", required=false, defaultValue="9") Double valorHora) {
+
+        LocalDate date = LocalDate.parse(dataEntrada);
         LocalTime time = LocalTime.parse(horaEntrada);
-        LocalDateTime entrada = LocalDateTime.of(LocalDate.now(), time);
+        LocalDateTime entrada = LocalDateTime.of(date, time);
 
         RegistroPonto ponto = new RegistroPonto();
         ponto.setEntrada(entrada);
@@ -54,10 +62,13 @@ public class HomeController {
     }
 
     @PostMapping("/saida")
-    public String saida(@RequestParam String horaSaida,
-                        @RequestParam(name="valorHora", required=false, defaultValue="9") Integer valorHora) {
+    public String saida(@RequestParam String dataSaida,
+                        @RequestParam String horaSaida,
+                        @RequestParam(name="valorHora", required=false, defaultValue="9") Double valorHora) {
+
+        LocalDate date = LocalDate.parse(dataSaida);
         LocalTime time = LocalTime.parse(horaSaida);
-        LocalDateTime saida = LocalDateTime.of(LocalDate.now(), time);
+        LocalDateTime saida = LocalDateTime.of(date, time);
 
         RegistroPonto ponto = repository.findAll().stream()
                 .filter(p -> p.getSaida() == null)
@@ -72,16 +83,18 @@ public class HomeController {
         return "redirect:/?valorHora=" + valorHora;
     }
 
+
     @PostMapping("/almoco")
-    public String almoco(@RequestParam(required=false) String almoco,
-                         @RequestParam(name="valorHora", required=false, defaultValue="9") Integer valorHora) {
+    public String almoco(@RequestParam(name="almoco", required=false) String almoco,
+                         @RequestParam(name="valorHora", required=false, defaultValue="9") Double valorHora) {
+
         RegistroPonto ponto = repository.findAll().stream()
                 .filter(p -> p.getSaida() == null)
                 .findFirst()
                 .orElse(null);
 
         if (ponto != null) {
-            ponto.setAlmoco(almoco != null);
+            ponto.setAlmoco(almoco != null && almoco.equals("true"));
             repository.save(ponto);
         }
 
