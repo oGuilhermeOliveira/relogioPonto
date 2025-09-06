@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Relógio de Ponto</title>
+</head>
+<body>
+<h1>Relógio de Ponto</h1>
+
+<!-- Seleção do valor da hora -->
+<h2>Valor da Hora</h2>
+<form method="get" action="/">
+    <select name="valorHora">
+        <option th:value="9" th:selected="${valorHora == 9}">R$ 9</option>
+        <option th:value="12" th:selected="${valorHora == 12}">R$ 12</option>
+    </select>
+    <button type="submit">Aplicar</button>
+</form>
+
+<hr/>
+
+<!-- Formulários de entrada/saída/almoco -->
+<h2>Registrar Ponto</h2>
+<form action="/entrada" method="post">
+    <input type="time" name="horaEntrada" required>
+    <input type="hidden" name="valorHora" th:value="${valorHora}"/>
+    <button type="submit">Registrar Entrada</button>
+</form>
+
+<!-- Formulário de saída -->
+<form action="/saida" method="post">
+    <input type="time" name="horaSaida" required>
+    <input type="hidden" name="valorHora" th:value="${valorHora}"/>
+    <button type="submit">Registrar Saída</button>
+</form>
+
+<!-- Formulário de almoço -->
+<form action="/almoco" method="post">
+    <input type="checkbox" name="almoco">
+    <input type="hidden" name="valorHora" th:value="${valorHora}"/>
+    <button type="submit">Salvar</button>
+</form>
+
+
+<hr/>
+
+<!-- Tabela de registros -->
+<h2>Registros</h2>
+<form action="/deleteAll" method="post">
+    <button type="submit">Apagar Todos Registros</button>
+</form>
+<table border="1">
+    <tr>
+        <th>Entrada</th>
+        <th>Saída</th>
+        <th>Almoço</th>
+        <th>Horas</th>
+        <th>R$ do dia</th>
+        <th>Ações</th>
+    </tr>
+    <tr th:each="p : ${registros}">
+        <td th:text="${p.entrada != null ? #temporals.format(p.entrada,'HH:mm') : '-'}"></td>
+        <td th:text="${p.saida != null ? #temporals.format(p.saida,'HH:mm') : '-'}"></td>
+        <td th:text="${p.almoco ? 'Sim' : 'Não'}"></td>
+        <td th:text="${svc.calcularHoras(p)} + ' h'"></td>
+        <td th:text="${svc.calcularHoras(p) * valorHora}"></td>
+        <td>
+            <form th:action="@{'/delete/' + ${p.id}}" method="post" style="display:inline">
+                <button type="submit">Apagar</button>
+            </form>
+        </td>
+    </tr>
+</table>
+
+<hr/>
+<h2>Total Horas: <span th:text="${totalHoras} + ' h'"></span></h2>
+<h2>Total a Receber: <span th:text="${totalReceber}"></span></h2>
+
+</body>
+</html>
